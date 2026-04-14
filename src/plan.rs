@@ -62,6 +62,7 @@ pub const TIMESTAMP_FIELD_NAMES: &'static [&'static str] = &["timestamp", "block
 pub enum FieldRange {
     BlockNumber(Range<i128>),
     Timestamp(Range<i128>),
+    Custom(String, Range<i128>),
 }
 
 /// Two Fieldranges are of the same type.
@@ -74,6 +75,10 @@ impl FieldRange {
             },
             FieldRange::Timestamp(_) => match other {
                 FieldRange::Timestamp(_) => true,
+                _ => false,
+            },
+            FieldRange::Custom(me, _) => match other {
+                FieldRange::Custom(ot, _) => me == ot,
                 _ => false,
             },
         }
@@ -97,6 +102,8 @@ pub struct Source {
     pub first_field: usize,
     /// Names of all fields in the table.
     pub fields: Vec<String>,
+    /// Search keys in the table.
+    pub keys: Vec<String>,
     /// Projection: a list of indexes into fields.
     pub projection: Vec<usize>,
     /// Filters specific for this table.
@@ -589,6 +596,7 @@ fn read_to_source<T: TargetPlan>(r: &ReadRel) -> PlanResult<T> {
         schema_name: schema_name,
         first_field: 0,
         fields: fields,
+        keys: Vec::new(),
         projection: projection,
         filter: r.filter.as_ref().map(|x| *x.clone()),
         blocks: Vec::with_capacity(0),
@@ -997,6 +1005,7 @@ mod test {
                             "height".to_string(),
                             "timestamp".to_string(),
                         ],
+                        keys: Vec::new(),
                         projection: vec![0, 5],
                         filter: None,
                         blocks: vec![],
@@ -1031,6 +1040,7 @@ mod test {
                             "height".to_string(),
                             "timestamp".to_string(),
                         ],
+                        keys: Vec::new(),
                         projection: vec![0, 5],
                         filter: None,
                         blocks: vec![],
@@ -1068,6 +1078,7 @@ mod test {
                                     "height".to_string(),
                                     "timestamp".to_string(),
                                 ],
+                                keys: Vec::new(),
                                 projection: vec![0, 5],
                                 filter: None,
                                 blocks: vec![],
@@ -1078,6 +1089,7 @@ mod test {
                                 schema_name: "".to_string(),
                                 first_field: 0,
                                 fields: vec!["number".to_string(), "note".to_string(),],
+                                keys: Vec::new(),
                                 projection: vec![0, 1],
                                 filter: None,
                                 blocks: vec![],
@@ -1117,6 +1129,7 @@ mod test {
                                     "height".to_string(),
                                     "timestamp".to_string(),
                                 ],
+                                keys: Vec::new(),
                                 projection: vec![0, 4],
                                 filter: None,
                                 blocks: vec![],
@@ -1149,6 +1162,7 @@ mod test {
                                     "loaded_addresses_size".to_string(),
                                     "accounts_bloom".to_string(),
                                 ],
+                                keys: Vec::new(),
                                 projection: vec![0, 1],
                                 filter: None,
                                 blocks: vec![],
